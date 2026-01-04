@@ -1,6 +1,6 @@
 /**
- * DJ SMOKE STREAM - Player State Manager
- * Implements: Playlist Logic, Repeat Modes, & Time Formatting
+ * DJ SMOKE STREAM - Player Logic (User Upload Version)
+ * Implements: Dynamic Time Formatting, Repeat Modes, and Navigation
  */
 
 class PlayerManager {
@@ -10,65 +10,66 @@ class PlayerManager {
         this.totalDurationDisplay = document.querySelector('.total-duration');
         this.shuffleBtn = document.getElementById('shuffleBtn');
         this.repeatBtn = document.getElementById('repeatBtn');
+        this.progressBar = document.getElementById('progressBar');
         
         // State management
         this.isShuffle = false;
-        this.repeatMode = 0; // 0: No Repeat, 1: Repeat All, 2: Repeat One [3]
-        
-        // Track data from sources [4]
-        this.playlist = [
-            {
-                title: "AI Lounge: After Dark",
-                artist: "DJ Smoke Stream",
-                duration: "2:58",
-                src: "audio/ai-lounge-after-dark.mp3"
-            }
-            // Additional tracks can be added here for full playlist support [5]
-        ];
+        this.repeatMode = 0; // 0: No Repeat, 1: Repeat All, 2: Repeat One
         
         this.init();
     }
 
     init() {
         this.setupEventListeners();
-        // Set initial duration from source metadata [4]
-        this.totalDurationDisplay.textContent = this.playlist.duration;
     }
 
     setupEventListeners() {
-        // Shuffle Toggle
-        this.shuffleBtn.addEventListener('click', () => {
-            this.isShuffle = !this.isShuffle;
-            this.shuffleBtn.style.color = this.isShuffle ? '#00d9ff' : '#fff'; // Cyan for active
-            this.shuffleBtn.classList.toggle('active', this.isShuffle);
+        // Update total duration once the user's file metadata is loaded
+        this.audio.addEventListener('loadedmetadata', () => {
+            this.totalDurationDisplay.textContent = this.formatTime(this.audio.duration);
         });
 
-        // Repeat Mode Cycle [3]
+        // Dynamic Time Updates
+        this.audio.addEventListener('timeupdate', () => {
+            this.currentTimeDisplay.textContent = this.formatTime(this.audio.currentTime);
+        });
+
+        // Repeat Mode Cycle (Gray -> Cyan -> Magenta)
         this.repeatBtn.addEventListener('click', () => {
             this.repeatMode = (this.repeatMode + 1) % 3;
             this.updateRepeatUI();
         });
 
-        // Time Update Formatting [2]
-        this.audio.addEventListener('timeupdate', () => {
-            this.currentTimeDisplay.textContent = this.formatTime(this.audio.currentTime);
+        // Handle Track End based on Professional Repeat Modes
+        this.audio.addEventListener('ended', () => {
+            if (this.repeatMode === 1 || this.repeatMode === 2) {
+                this.audio.currentTime = 0;
+                this.audio.play();
+            } else {
+                // No Repeat: Stop and reset
+                this.audio.pause();
+                this.audio.currentTime = 0;
+                document.getElementById('playPauseBtn').classList.remove('playing');
+            }
         });
 
-        // Handle Track End based on Repeat Mode [3]
-        this.audio.addEventListener('ended', () => {
-            if (this.repeatMode === 2) { // Repeat One (Magenta)
-                this.audio.currentTime = 0;
-                this.audio.play();
-            } else if (this.repeatMode === 1) { // Repeat All (Cyan)
-                // Logic for next track would go here
-                this.audio.currentTime = 0;
-                this.audio.play();
-            }
+        // Shuffle Toggle (Visual Feedback only for single-track mode)
+        this.shuffleBtn.addEventListener('click', () => {
+            this.isShuffle = !this.isShuffle;
+            this.shuffleBtn.style.color = this.isShuffle ? '#00d9ff' : '#fff';
+        });
+
+        // Keyboard Seek Shortcuts (5-second skips)
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'ArrowRight') this.audio.currentTime += 5;
+            if (e.code === 'ArrowLeft') this.audio.currentTime -= 5;
+            if (e.code === 'ArrowUp') this.audio.volume = Math.min(1, this.audio.volume + 0.1);
+            if (e.code === 'ArrowDown') this.audio.volume = Math.max(0, this.audio.volume - 0.1);
         });
     }
 
     /**
-     * Updates the UI based on the specific Repeat Modes defined in sources [3]:
+     * Updates the UI based on specific color-coded repeat modes:
      * 1. No Repeat (Gray)
      * 2. Repeat All (Cyan)
      * 3. Repeat One (Magenta)
@@ -76,22 +77,20 @@ class PlayerManager {
     updateRepeatUI() {
         const colors = ['#808080', '#00d9ff', '#ff006e'];
         const currentModeColor = colors[this.repeatMode];
-        
         this.repeatBtn.style.color = currentModeColor;
-        this.repeatBtn.style.filter = `drop-shadow(0 0 5px ${currentModeColor})`;
     }
 
     /**
-     * Formats seconds into MM:SS for the professional time display [2]
+     * Converts seconds into MM:SS format
      */
     formatTime(seconds) {
+        if (isNaN(seconds)) return "0:00";
         const mins = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     }
 }
 
-// Initialize Player Logic
 document.addEventListener('DOMContentLoaded', () => {
     window.playerManager = new PlayerManager();
 });
