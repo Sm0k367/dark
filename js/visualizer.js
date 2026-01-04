@@ -1,6 +1,6 @@
 /**
- * DJ SMOKE STREAM - Visualizer Engine (Playback Fix)
- * Ensures AudioContext resumes on user interaction and handles Blobs correctly.
+ * DJ SMOKE STREAM - Visualizer Engine (Production Fix)
+ * Addresses: File selection index and AudioContext resumption
  */
 
 class AudioVisualizer {
@@ -13,6 +13,7 @@ class AudioVisualizer {
         this.progressFill = document.getElementById('progressFill');
         this.volumeSlider = document.getElementById('volumeSlider');
         
+        // Metadata elements for the Orbitron/Space Mono titles
         this.trackTitle = document.getElementById('trackTitle');
         this.artistName = document.getElementById('artistName');
         
@@ -33,14 +34,14 @@ class AudioVisualizer {
     }
 
     /**
-     * Resumes or starts the AudioContext. 
-     * Browsers require this inside a user-initiated event. [2]
+     * Resumes the AudioContext. Source [2] notes that 
+     * user interaction is required for audio context to start.
      */
-    async startAudioEngine() {
+    async resumeAudioContext() {
         if (!this.audioContext) {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
             this.analyser = this.audioContext.createAnalyser();
-            this.analyser.fftSize = 256; // Technical spec from sources [3]
+            this.analyser.fftSize = 256; // Spec from Source [4]
             this.analyser.smoothingTimeConstant = 0.85;
 
             this.source = this.audioContext.createMediaElementSource(this.audio);
@@ -50,43 +51,40 @@ class AudioVisualizer {
             this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
             this.render();
         }
-
         if (this.audioContext.state === 'suspended') {
             await this.audioContext.resume();
         }
     }
 
     setupEventListeners() {
-        // Updated File Upload Logic
         this.fileInput.addEventListener('change', async (e) => {
-            const file = e.target.files;
+            // FIX: Access the specific file  from the FileList
+            const file = e.target.files; 
+            
             if (file) {
-                // Create a local URL for the file
                 const url = URL.createObjectURL(file);
                 
-                // Reset audio state for new track
+                // Reset and load the new blob
                 this.audio.pause();
                 this.audio.src = url;
-                this.audio.load(); // Forces the browser to load the new blob [1]
+                this.audio.load();
 
-                // Update UI metadata [4]
+                // Update UI metadata (Source [5] Typography)
                 this.trackTitle.textContent = file.name.replace(/\.[^/.]+$/, "");
                 this.artistName.textContent = "Local Upload";
 
-                // Ensure engine starts and track plays
                 try {
-                    await this.startAudioEngine();
+                    await this.resumeAudioContext();
                     await this.audio.play();
                     this.isPlaying = true;
-                    this.playBtn.classList.add('playing');
                 } catch (err) {
-                    console.error("Playback failed:", err);
+                    console.error("Playback failed. Check browser console [1]:", err);
                 }
             }
         });
 
         this.playBtn.addEventListener('click', async () => {
-            await this.startAudioEngine();
+            await this.resumeAudioContext();
             this.togglePlay();
         });
 
@@ -104,11 +102,9 @@ class AudioVisualizer {
         if (this.audio.paused) {
             this.audio.play();
             this.isPlaying = true;
-            this.playBtn.classList.add('playing');
         } else {
             this.audio.pause();
             this.isPlaying = false;
-            this.playBtn.classList.remove('playing');
         }
     }
 
@@ -121,18 +117,19 @@ class AudioVisualizer {
         requestAnimationFrame(() => this.render());
         if (!this.isPlaying || !this.analyser) return;
 
+        // Implementation of the 64-bar frequency visualizer [4]
         this.analyser.getByteFrequencyData(this.dataArray);
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Standard 64-bar visualization logic [3]
         const barWidth = (this.canvas.width / 64);
         let x = 0;
 
         for (let i = 0; i < 64; i++) {
             const barHeight = (this.dataArray[i] / 255) * this.canvas.height;
+            // Neon Gradient using Accent Cyan and Accent Magenta [5]
             const gradient = this.ctx.createLinearGradient(0, this.canvas.height, 0, 0);
-            gradient.addColorStop(0, '#00d9ff'); // Accent Cyan [5]
-            gradient.addColorStop(1, '#ff006e'); // Accent Magenta [5]
+            gradient.addColorStop(0, '#00d9ff'); 
+            gradient.addColorStop(1, '#ff006e'); 
 
             this.ctx.fillStyle = gradient;
             this.ctx.fillRect(x, this.canvas.height - barHeight, barWidth - 2, barHeight);
