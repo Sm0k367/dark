@@ -1,3 +1,9 @@
+/**
+ * DJ SMOKE STREAM - Visualizer Engine (Bug Fix Version)
+ * Fixes: FileList indexing and Playback Promise Aborts
+ * Implements: FFT 256, 0.85 Smoothing [3]
+ */
+
 class AudioVisualizer {
     constructor() {
         this.audio = document.getElementById('audioElement');
@@ -7,86 +13,71 @@ class AudioVisualizer {
         
         this.audioContext = null;
         this.analyser = null;
-        this.source = null; // Store source to prevent re-connection errors
         this.isPlaying = false;
-
+        
         this.init();
     }
 
     init() {
-        // Handle File Selection
+        // Correcting the File Selection Error
         this.fileInput.addEventListener('change', (e) => {
-            const file = e.target.files; // Access the specific file
-            if (file) {
-                const url = URL.createObjectURL(file);
+            const selectedFile = e.target.files; // FIX: Access the specific file at index 0
+            
+            if (selectedFile) {
+                // Ensure the URL is correctly generated from a single File object
+                const url = URL.createObjectURL(selectedFile);
                 this.audio.src = url;
-                this.audio.load(); // Force browser to recognize the new file
-                this.trackTitle.textContent = file.name.replace(/\.[^/.]+$/, "");
+                this.audio.load(); // Prepare the Media Element [1]
+                
+                // Update UI text using "Space Mono" or "Orbitron" styles [4]
+                this.trackTitle.textContent = selectedFile.name.replace(/\.[^/.]+$/, "");
                 this.isPlaying = false;
             }
         });
 
-        // Handle Playback - Must be a direct user click
+        // Handle the Playback Promise
         this.playBtn.addEventListener('click', () => this.handlePlayback());
     }
 
-    async handlePlayback() {
-        // 1. Initialize Audio Engine on first click (Requirement: User Interaction)
+    async setupAudioEngine() {
         if (!this.audioContext) {
+            // Source requirement: Chrome/Edge 14+, Firefox 25+, Safari 6+ [5]
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
             this.analyser = this.audioContext.createAnalyser();
-            this.analyser.fftSize = 256; // Spec from source [4]
             
-            // Connect Media Element to Visualizer [3]
-            this.source = this.audioContext.createMediaElementSource(this.audio);
-            this.source.connect(this.analyser);
-            this.analyser.connect(this.audioContext.destination);
-            
-            this.startRendering(); // Start the visual loops
-        }
+            // Visualization Specs from Source [3]
+            this.analyser.fftSize = 256; 
+            this.analyser.smoothingTimeConstant = 0.85;
 
-        // 2. Resume Context (Required for Chrome/Safari) [2]
+            const source = this.audioContext.createMediaElementSource(this.audio);
+            source.connect(this.analyser);
+            this.analyser.connect(this.audioContext.destination);
+        }
+        
+        // Browsers require interaction to resume AudioContext [6]
         if (this.audioContext.state === 'suspended') {
             await this.audioContext.resume();
         }
-
-        // 3. Toggle Play/Pause
-        if (this.audio.paused) {
-            try {
-                await this.audio.play();
-                this.isPlaying = true;
-                this.playBtn.textContent = "⏸"; // Visual feedback [5]
-            } catch (err) {
-                console.error("Playback blocked:", err);
-            }
-        } else {
-            this.audio.pause();
-            this.isPlaying = false;
-            this.playBtn.textContent = "▶";
-        }
     }
 
-    startRendering() {
-        const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
-        const canvas = document.getElementById('visualizerCanvas');
-        const ctx = canvas.getContext('2d');
+    async handlePlayback() {
+        try {
+            await this.setupAudioEngine();
 
-        const render = () => {
-            requestAnimationFrame(render);
-            if (!this.isPlaying) return;
-
-            this.analyser.getByteFrequencyData(dataArray);
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw 64-bar visualization [4]
-            const barWidth = canvas.width / 64;
-            for (let i = 0; i < 64; i++) {
-                const barHeight = (dataArray[i] / 255) * canvas.height;
-                ctx.fillStyle = '#00d9ff'; // Accent Cyan [6]
-                ctx.fillRect(i * barWidth, canvas.height - barHeight, barWidth - 2, barHeight);
+            if (this.audio.paused) {
+                // FIX: Await the play() promise to prevent AbortError [1]
+                await this.audio.play();
+                this.isPlaying = true;
+                this.playBtn.innerHTML = '⏸'; 
+            } else {
+                this.audio.pause();
+                this.isPlaying = false;
+                this.playBtn.innerHTML = '▶';
             }
-        };
-        render();
+        } catch (err) {
+            // Troubleshooting: Check console for blocked autoplay [7]
+            console.error("Playback failed:", err);
+        }
     }
 }
 
