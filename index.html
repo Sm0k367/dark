@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DJ SMOKE STREAM - AI Lounge After Dark</title>
+    <!-- Typography: Orbitron for titles, Poppins for UI, Space Mono for data -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Poppins:wght@300;400;600;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Animated background elements: Gradient orbs and grid overlay -->
+    <div class="bg-container">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="grid-overlay"></div>
+    </div>
+
+    <main class="player-container">
+        <!-- Glassmorphism Header with Track Information -->
+        <header class="track-info">
+            <h1 class="glitch-text" data-text="AI Lounge: After Dark">AI Lounge: After Dark</h1>
+            <p class="artist-name">DJ Smoke Stream</p>
+            <div class="genre-tags">
+                <span>Vaporhouse</span>
+                <span>Future Chill</span>
+            </div>
+        </header>
+
+        <!-- Visualization Canvas Area -->
+        <section class="visualizer-section">
+            <canvas id="visualizerCanvas"></canvas>
+            <!-- Radial Visualization Layer -->
+            <div id="radialContainer" class="radial-visualizer"></div>
+        </section>
+
+        <!-- Professional Player Controls -->
+        <footer class="player-controls">
+            <!-- Progress Bar with Draggable Handle -->
+            <div class="progress-container">
+                <span class="time current-time">0:00</span>
+                <div class="progress-bar" id="progressBar">
+                    <div class="progress-fill" id="progressFill"></div>
+                    <div class="progress-handle" id="progressHandle"></div>
+                </div>
+                <span class="time total-duration">2:58</span>
+            </div>
+
+            <div class="control-buttons">
+                <button id="shuffleBtn" class="icon-btn" title="Shuffle">
+                    <i class="shuffle-icon"></i>
+                </button>
+                <button id="prevBtn" class="icon-btn" title="Previous">
+                    <i class="prev-icon"></i>
+                </button>
+                <button id="playPauseBtn" class="play-btn" title="Play/Pause">
+                    <div class="play-icon"></div>
+                </button>
+                <button id="nextBtn" class="icon-btn" title="Next">
+                    <i class="next-icon"></i>
+                </button>
+                <button id="repeatBtn" class="icon-btn" title="Repeat Mode">
+                    <i class="repeat-icon"></i>
+                </button>
+            </div>
+
+            <!-- Volume Control Slider -->
+            <div class="volume-container">
+                <i class="volume-icon"></i>
+                <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.7">
+            </div>
+        </footer>
+    </main>
+
+    <!-- Audio Element (Required for Media Element API) -->
+    <audio id="audioElement" src="audio/ai-lounge-after-dark.mp3" crossorigin="anonymous"></audio>
+
+    <script src="js/visualizer.js"></script>
+</body>
+</html>
