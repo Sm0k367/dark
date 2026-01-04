@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <!-- Animated background elements: Gradient orbs and grid overlay -->
+    <!-- Animated background: Gradient orbs and grid overlay [1] -->
     <div class="bg-container">
         <div class="orb orb-1"></div>
         <div class="orb orb-2"></div>
@@ -17,64 +17,64 @@
     </div>
 
     <main class="player-container">
-        <!-- Glassmorphism Header with Track Information -->
+        <!-- Header with Upload Capability -->
         <header class="track-info">
-            <h1 class="glitch-text" data-text="AI Lounge: After Dark">AI Lounge: After Dark</h1>
-            <p class="artist-name">DJ Smoke Stream</p>
+            <h1 id="trackTitle" class="glitch-text" data-text="AI Lounge: After Dark">AI Lounge: After Dark</h1>
+            <p id="artistName" class="artist-name">DJ Smoke Stream</p>
             <div class="genre-tags">
                 <span>Vaporhouse</span>
                 <span>Future Chill</span>
             </div>
+            
+            <!-- NEW: User Upload Button [2] -->
+            <div class="upload-section">
+                <input type="file" id="audioUpload" accept="audio/*" hidden>
+                <label for="audioUpload" class="upload-label">
+                    <span class="upload-icon">⏏</span> Load Your Music
+                </label>
+            </div>
         </header>
 
-        <!-- Visualization Canvas Area -->
+        <!-- Visualization Canvas Area [3, 4] -->
         <section class="visualizer-section">
             <canvas id="visualizerCanvas"></canvas>
-            <!-- Radial Visualization Layer -->
-            <div id="radialContainer" class="radial-visualizer"></div>
+            <div id="visualizerMode" class="mode-indicator">Mode: 64-Bars</div>
         </section>
 
-        <!-- Professional Player Controls -->
+        <!-- Professional Player Controls [3, 5] -->
         <footer class="player-controls">
-            <!-- Progress Bar with Draggable Handle -->
             <div class="progress-container">
                 <span class="time current-time">0:00</span>
                 <div class="progress-bar" id="progressBar">
                     <div class="progress-fill" id="progressFill"></div>
-                    <div class="progress-handle" id="progressHandle"></div>
                 </div>
-                <span class="time total-duration">2:58</span>
+                <span class="time total-duration">0:00</span>
             </div>
 
             <div class="control-buttons">
-                <button id="shuffleBtn" class="icon-btn" title="Shuffle">
-                    <i class="shuffle-icon"></i>
-                </button>
-                <button id="prevBtn" class="icon-btn" title="Previous">
-                    <i class="prev-icon"></i>
-                </button>
+                <button id="shuffleBtn" class="icon-btn" title="Shuffle">🔀</button>
+                <button id="prevBtn" class="icon-btn" title="Previous">⏮</button>
                 <button id="playPauseBtn" class="play-btn" title="Play/Pause">
-                    <div class="play-icon"></div>
+                    <div class="play-icon">▶</div>
                 </button>
-                <button id="nextBtn" class="icon-btn" title="Next">
-                    <i class="next-icon"></i>
-                </button>
-                <button id="repeatBtn" class="icon-btn" title="Repeat Mode">
-                    <i class="repeat-icon"></i>
-                </button>
+                <button id="nextBtn" class="icon-btn" title="Next">⏭</button>
+                <button id="repeatBtn" class="icon-btn" title="Repeat Mode">🔁</button>
             </div>
 
-            <!-- Volume Control Slider -->
             <div class="volume-container">
-                <i class="volume-icon"></i>
+                <span class="volume-icon">🔊</span>
                 <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.7">
             </div>
         </footer>
     </main>
 
-    <!-- Audio Element (Required for Media Element API) -->
-    <audio id="audioElement" src="audio/ai-lounge-after-dark.mp3" crossorigin="anonymous"></audio>
+    <!-- Audio Element remains as the engine [6] -->
+    <audio id="audioElement" crossorigin="anonymous"></audio>
 
+    <!-- Standard script order -->
     <script src="js/visualizer.js"></script>
+    <script src="js/player-logic.js"></script>
+    <script src="js/visualizer-enhancements.js"></script>
+    <script src="js/interactions.js"></script>
 </body>
 </html>
