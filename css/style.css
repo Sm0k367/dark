@@ -1,10 +1,10 @@
 /* 
  * DJ SMOKE STREAM - Design System 
- * Implements: Glassmorphism, Neon Palette, and Responsive Layout
+ * Implements: Glassmorphism, Neon Palette, and User Upload UI
  */
 
 :root {
-    /* Color Palette [2] */
+    /* Color Palette from Sources [2] */
     --primary-dark: #0a0e27;
     --accent-cyan: #00d9ff;
     --accent-magenta: #ff006e;
@@ -12,13 +12,6 @@
     --accent-pink: #ff10f0;
     --accent-blue: #0099ff;
     
-    /* Spacing System [2] */
-    --space-xs: 0.5rem;
-    --space-sm: 1rem;
-    --space-md: 1.5rem;
-    --space-lg: 2rem;
-    --space-xl: 3rem;
-
     /* Glassmorphism Effects [1] */
     --glass-bg: rgba(255, 255, 255, 0.05);
     --glass-border: rgba(255, 255, 255, 0.1);
@@ -57,26 +50,12 @@ body {
     position: absolute;
     border-radius: 50%;
     filter: blur(80px);
-    opacity: 0.6;
+    opacity: 0.5;
     animation: float 20s infinite alternate ease-in-out;
 }
 
-.orb-1 {
-    width: 400px;
-    height: 400px;
-    background: var(--accent-purple);
-    top: -10%;
-    left: -10%;
-}
-
-.orb-2 {
-    width: 500px;
-    height: 500px;
-    background: var(--accent-blue);
-    bottom: -10%;
-    right: -10%;
-    animation-delay: -5s;
-}
+.orb-1 { width: 400px; height: 400px; background: var(--accent-purple); top: -10%; left: -10%; }
+.orb-2 { width: 500px; height: 500px; background: var(--accent-blue); bottom: -10%; right: -10%; }
 
 .grid-overlay {
     position: absolute;
@@ -91,7 +70,7 @@ body {
     animation: grid-move 10s linear infinite;
 }
 
-/* Glassmorphism Player Container [1] */
+/* Player Container [1] */
 .player-container {
     width: 90%;
     max-width: 900px;
@@ -99,62 +78,90 @@ body {
     backdrop-filter: blur(var(--blur-strength));
     border: 1px solid var(--glass-border);
     border-radius: 24px;
-    padding: var(--space-xl);
+    padding: 2rem;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     display: flex;
     flex-direction: column;
-    gap: var(--space-lg);
+    gap: 1.5rem;
+    position: relative;
+    z-index: 10;
+}
+
+/* NEW: Upload Section Styling */
+.upload-section {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: center;
+}
+
+.upload-label {
+    background: var(--glass-bg);
+    border: 1px solid var(--accent-cyan);
+    padding: 0.5rem 1.5rem;
+    border-radius: 50px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--accent-cyan);
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+}
+
+.upload-label:hover {
+    background: var(--accent-cyan);
+    color: var(--primary-dark);
+    box-shadow: 0 0 20px var(--accent-cyan);
+}
+
+/* Mode Indicator [4] */
+.mode-indicator {
+    position: absolute;
+    top: 1rem;
+    right: 1.5rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent-pink);
+    text-transform: uppercase;
 }
 
 /* Typography [2] */
 h1 {
     font-family: 'Orbitron', sans-serif;
     font-weight: 900;
-    font-size: 2.5rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
     color: var(--accent-cyan);
-    text-shadow: 0 0 20px rgba(0, 217, 255, 0.5);
+    text-shadow: 0 0 15px rgba(0, 217, 255, 0.5);
 }
 
 .artist-name {
-    font-family: 'Space Mono', monospace; /* Monospace for data [2] */
+    font-family: 'Space Mono', monospace;
     color: var(--accent-magenta);
-    font-size: 1.1rem;
-    margin-bottom: var(--space-xs);
 }
 
-/* Visualizer Canvas [4, 5] */
+/* Visualizer Canvas */
 .visualizer-section {
-    position: relative;
     height: 250px;
-    width: 100%;
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.3);
     border-radius: 12px;
     overflow: hidden;
 }
 
-#visualizerCanvas {
-    width: 100%;
-    height: 100%;
-}
+#visualizerCanvas { width: 100%; height: 100%; }
 
-/* Controls [4, 6] */
+/* Player Controls [5, 6] */
 .progress-bar {
     width: 100%;
     height: 6px;
     background: var(--glass-border);
     border-radius: 3px;
-    position: relative;
     cursor: pointer;
-    margin: var(--space-md) 0;
+    position: relative;
 }
 
 .progress-fill {
     height: 100%;
     background: linear-gradient(90deg, var(--accent-cyan), var(--accent-pink));
     width: 0%;
-    border-radius: 3px;
     box-shadow: 0 0 10px var(--accent-cyan);
 }
 
@@ -162,7 +169,16 @@ h1 {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: var(--space-lg);
+    gap: 2rem;
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: transform 0.2s;
 }
 
 .play-btn {
@@ -172,30 +188,18 @@ h1 {
     background: var(--accent-cyan);
     border: none;
     cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s; /* Hover effects [7] */
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-.play-btn:hover {
-    transform: scale(1.1);
-    box-shadow: 0 0 25px var(--accent-cyan);
-}
-
-/* Animations [1, 8] */
+/* Animations [1] */
 @keyframes float {
     from { transform: translate(0, 0); }
-    to { transform: translate(100px, 50px); }
+    to { transform: translate(50px, 30px); }
 }
 
 @keyframes grid-move {
     from { background-position: 0 0; }
     to { background-position: 0 50px; }
-}
-
-/* Mobile Responsiveness [4, 9] */
-@media (max-width: 768px) {
-    .player-container {
-        padding: var(--space-md);
-    }
-    h1 { font-size: 1.5rem; }
-    .visualizer-section { height: 150px; }
 }
