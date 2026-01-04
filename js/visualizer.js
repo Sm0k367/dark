@@ -1,20 +1,25 @@
 /**
- * DJ SMOKE STREAM - Visualizer Engine
- * Core Logic: Web Audio API, Canvas Rendering, & Media Controls
+ * DJ SMOKE STREAM - Visualizer Engine (User Upload Version)
+ * Core Logic: File Handling, Web Audio API, & 64-Bar Rendering
  */
 
 class AudioVisualizer {
     constructor() {
-        // Elements
+        // Core Elements
         this.audio = document.getElementById('audioElement');
         this.canvas = document.getElementById('visualizerCanvas');
         this.ctx = this.canvas.getContext('2d');
+        this.fileInput = document.getElementById('audioUpload');
         this.playBtn = document.getElementById('playPauseBtn');
         this.progressBar = document.getElementById('progressBar');
         this.progressFill = document.getElementById('progressFill');
         this.volumeSlider = document.getElementById('volumeSlider');
         
-        // Audio Context Setup
+        // Metadata Elements
+        this.trackTitle = document.getElementById('trackTitle');
+        this.artistName = document.getElementById('artistName');
+        
+        // Web Audio Context Setup
         this.audioContext = null;
         this.analyser = null;
         this.dataArray = null;
@@ -22,7 +27,6 @@ class AudioVisualizer {
         
         // State
         this.isPlaying = false;
-        this.currentMode = 'bars'; // modes: bars, waveform, radial
         
         this.init();
     }
@@ -33,13 +37,15 @@ class AudioVisualizer {
         window.addEventListener('resize', () => this.resizeCanvas());
     }
 
+    /**
+     * Initializes the Web Audio API AnalyserNode.
+     * Technical Specs: FFT 256, 64 bars, 0.85 smoothing [2].
+     */
     setupAudioContext() {
         if (this.audioContext) return;
 
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         this.analyser = this.audioContext.createAnalyser();
-        
-        // Technical Specs from sources: FFT 256, 64 bars, 0.85 smoothing [1]
         this.analyser.fftSize = 256; 
         this.analyser.smoothingTimeConstant = 0.85;
         
@@ -47,54 +53,47 @@ class AudioVisualizer {
         this.source.connect(this.analyser);
         this.analyser.connect(this.audioContext.destination);
 
-        const bufferLength = this.analyser.frequencyBinCount; // 128
-        this.dataArray = new Uint8Array(bufferLength);
-        
+        this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
         this.render();
     }
 
     setupEventListeners() {
-        // Play/Pause Toggle
-        this.playBtn.addEventListener('click', () => this.togglePlay());
-
-        // Progress Bar Seeking
-        this.progressBar.addEventListener('click', (e) => {
-            const rect = this.progressBar.getBoundingClientRect();
-            const pos = (e.clientX - rect.left) / rect.width;
-            this.audio.currentTime = pos * this.audio.duration;
-        });
-
-        // Volume Control
-        this.volumeSlider.addEventListener('input', (e) => {
-            this.audio.volume = e.target.value;
-        });
-
-        // Keyboard Shortcuts [4]
-        window.addEventListener('keydown', (e) => {
-            switch(e.code) {
-                case 'Space': 
-                    e.preventDefault();
-                    this.togglePlay(); 
-                    break;
-                case 'ArrowRight': 
-                    this.audio.currentTime += 5; 
-                    break;
-                case 'ArrowLeft': 
-                    this.audio.currentTime -= 5; 
-                    break;
-                case 'ArrowUp': 
-                    this.audio.volume = Math.min(1, this.audio.volume + 0.1);
-                    this.volumeSlider.value = this.audio.volume;
-                    break;
-                case 'ArrowDown': 
-                    this.audio.volume = Math.max(0, this.audio.volume - 0.1);
-                    this.volumeSlider.value = this.audio.volume;
-                    break;
+        // Handle User File Upload
+        this.fileInput.addEventListener('change', (e) => {
+            const file = e.target.files;
+            if (file) {
+                const url = URL.createObjectURL(file);
+                this.audio.src = url;
+                
+                // Update UI metadata dynamically [3]
+                this.trackTitle.textContent = file.name.replace(/\.[^/.]+$/, "");
+                this.artistName.textContent = "Local Track";
+                
+                // Auto-play upon upload
+                this.audio.play();
+                this.isPlaying = true;
+                if (!this.audioContext) this.setupAudioContext();
             }
         });
 
-        // Audio Events
-        this.audio.addEventListener('timeupdate', () => this.updateProgress());
+        // Play/Pause with Keyboard Shortcut support [4]
+        this.playBtn.addEventListener('click', () => this.togglePlay());
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                this.togglePlay();
+            }
+        });
+
+        this.audio.addEventListener('timeupdate', () => {
+            const percent = (this.audio.currentTime / this.audio.duration) * 100;
+            this.progressFill.style.width = `${percent}%`;
+        });
+
+        this.volumeSlider.addEventListener('input', (e) => {
+            this.audio.volume = e.target.value;
+        });
     }
 
     togglePlay() {
@@ -103,17 +102,10 @@ class AudioVisualizer {
         if (this.audio.paused) {
             this.audio.play();
             this.isPlaying = true;
-            this.playBtn.classList.add('playing');
         } else {
             this.audio.pause();
             this.isPlaying = false;
-            this.playBtn.classList.remove('playing');
         }
-    }
-
-    updateProgress() {
-        const percent = (this.audio.currentTime / this.audio.duration) * 100;
-        this.progressFill.style.width = `${percent}%`;
     }
 
     resizeCanvas() {
@@ -121,28 +113,29 @@ class AudioVisualizer {
         this.canvas.height = this.canvas.offsetHeight * window.devicePixelRatio;
     }
 
+    /**
+     * Renders the 64-bar visualization using the primary neon palette [2, 5].
+     */
     render() {
         requestAnimationFrame(() => this.render());
-        
         if (!this.isPlaying) return;
 
         this.analyser.getByteFrequencyData(this.dataArray);
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Render 64-bar visualization [1, 3]
         const barWidth = (this.canvas.width / 64);
         let x = 0;
 
         for (let i = 0; i < 64; i++) {
             const barHeight = (this.dataArray[i] / 255) * this.canvas.height;
             
-            // Neon gradient: Cyan to Magenta [5]
+            // Neon Gradient: Accent Cyan to Accent Magenta [5]
             const gradient = this.ctx.createLinearGradient(0, this.canvas.height, 0, 0);
-            gradient.addColorStop(0, '#00d9ff'); // Accent Cyan
-            gradient.addColorStop(1, '#ff006e'); // Accent Magenta
+            gradient.addColorStop(0, '#00d9ff'); 
+            gradient.addColorStop(1, '#ff006e'); 
 
             this.ctx.fillStyle = gradient;
-            this.ctx.shadowBlur = 15;
+            this.ctx.shadowBlur = 10;
             this.ctx.shadowColor = '#00d9ff';
             
             this.ctx.fillRect(x, this.canvas.height - barHeight, barWidth - 2, barHeight);
@@ -151,7 +144,6 @@ class AudioVisualizer {
     }
 }
 
-// Initialize on load
 document.addEventListener('DOMContentLoaded', () => {
-    const visualizer = new AudioVisualizer();
+    window.visualizer = new AudioVisualizer();
 });
